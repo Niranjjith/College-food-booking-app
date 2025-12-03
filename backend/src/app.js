@@ -15,6 +15,9 @@ import walletRoutes from "./routes/wallet.routes.js";
 import qrRoutes from "./routes/qr.routes.js";
 import subscriptionRoutes from "./routes/subscription.routes.js";
 import feedbackRoutes from "./routes/feedback.routes.js";
+import prioritizationRoutes from "./routes/prioritization.routes.js";
+import crowdRoutes from "./routes/crowd.routes.js";
+import chatbotRoutes from "./routes/chatbot.routes.js";
 
 dotenv.config();
 connectDB();
@@ -43,6 +46,9 @@ app.use("/api/wallet", walletRoutes);
 app.use("/api/qr", qrRoutes);
 app.use("/api/subscriptions", subscriptionRoutes);
 app.use("/api/feedback", feedbackRoutes);
+app.use("/api/prioritization", prioritizationRoutes);
+app.use("/api/crowd", crowdRoutes);
+app.use("/api/chatbot", chatbotRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));

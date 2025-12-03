@@ -9,6 +9,7 @@ class OfflineService {
   static const String _ordersKey = 'cached_orders';
   static const String _pendingOrdersKey = 'pending_orders';
   static const String _lastSyncKey = 'last_sync';
+  static const String _offlineOrdersKey = 'offline_orders';
 
   // Cache foods
   static Future<void> cacheFoods(List<Food> foods) async {
@@ -109,6 +110,102 @@ class OfflineService {
     } catch (e) {
       return false;
     }
+  }
+
+  // ===== Offline Pre-Order Mode =====
+  
+  // Save offline order
+  static Future<void> saveOfflineOrder(Map<String, dynamic> orderData) async {
+    final prefs = await SharedPreferences.getInstance();
+    final offlineJson = prefs.getString(_offlineOrdersKey);
+    List<Map<String, dynamic>> offlineOrders = [];
+    if (offlineJson != null) {
+      offlineOrders = List<Map<String, dynamic>>.from(jsonDecode(offlineJson));
+    }
+    
+    // Add timestamp and unique ID
+    orderData['_offlineId'] = DateTime.now().millisecondsSinceEpoch.toString();
+    orderData['_offlineTimestamp'] = DateTime.now().toIso8601String();
+    orderData['_synced'] = false;
+    
+    offlineOrders.add(orderData);
+    await prefs.setString(_offlineOrdersKey, jsonEncode(offlineOrders));
+  }
+
+  // Get offline orders
+  static Future<List<Map<String, dynamic>>> getOfflineOrders() async {
+    final prefs = await SharedPreferences.getInstance();
+    final offlineJson = prefs.getString(_offlineOrdersKey);
+    if (offlineJson != null) {
+      return List<Map<String, dynamic>>.from(jsonDecode(offlineJson));
+    }
+    return [];
+  }
+
+  // Get unsynced orders
+  static Future<List<Map<String, dynamic>>> getUnsyncedOrders() async {
+    final orders = await getOfflineOrders();
+    return orders.where((order) => order['_synced'] == false).toList();
+  }
+
+  // Mark order as synced
+  static Future<void> markOrderSynced(String offlineId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final orders = await getOfflineOrders();
+    final updated = orders.map((order) {
+      if (order['_offlineId'] == offlineId) {
+        order['_synced'] = true;
+      }
+      return order;
+    }).toList();
+    await prefs.setString(_offlineOrdersKey, jsonEncode(updated));
+  }
+
+  // Remove synced orders
+  static Future<void> removeSyncedOrders() async {
+    final prefs = await SharedPreferences.getInstance();
+    final orders = await getOfflineOrders();
+    final unsynced = orders.where((order) => order['_synced'] == false).toList();
+    await prefs.setString(_offlineOrdersKey, jsonEncode(unsynced));
+  }
+
+  // Sync offline orders to server
+  static Future<Map<String, dynamic>> syncOfflineOrders(Future<Map<String, dynamic>> Function(Map<String, dynamic>) createOrderFn) async {
+    final unsynced = await getUnsyncedOrders();
+    int successCount = 0;
+    int failCount = 0;
+    List<String> syncedIds = [];
+
+    for (final order in unsynced) {
+      try {
+        // Remove offline metadata before sending
+        final orderData = Map<String, dynamic>.from(order);
+        orderData.remove('_offlineId');
+        orderData.remove('_offlineTimestamp');
+        orderData.remove('_synced');
+
+        final result = await createOrderFn(orderData);
+        if (result != null) {
+          await markOrderSynced(order['_offlineId']);
+          syncedIds.add(order['_offlineId']);
+          successCount++;
+        } else {
+          failCount++;
+        }
+      } catch (e) {
+        failCount++;
+      }
+    }
+
+    // Clean up synced orders
+    await removeSyncedOrders();
+
+    return {
+      total: unsynced.length,
+      success: successCount,
+      failed: failCount,
+      syncedIds,
+    };
   }
 }
 

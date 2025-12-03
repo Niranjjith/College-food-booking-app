@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 import '../services/api_service.dart';
+import '../services/offline_service.dart';
 import '../models/order.dart';
 import 'wallet_screen.dart';
 
@@ -118,15 +119,44 @@ class _CartScreenState extends State<CartScreen> {
     });
 
     try {
-      // Create order first
-      final order = await ApiService.createOrder(widget.cartItems);
-      if (order == null) {
+      // Check if online
+      bool isOnline = await OfflineService.isOnline();
+      
+      // Try to create order
+      Order? order;
+      try {
+        order = await ApiService.createOrder(widget.cartItems);
+        isOnline = true; // If successful, we're online
+      } catch (e) {
+        isOnline = false;
+      }
+
+      // If offline, save order locally
+      if (!isOnline || order == null) {
+        // Save as offline order
+        final orderData = {
+          'items': widget.cartItems,
+          'subtotal': _calculateTotal(),
+          'paymentMethod': _selectedPaymentMethod,
+          'timestamp': DateTime.now().toIso8601String(),
+        };
+        
+        await OfflineService.saveOfflineOrder(orderData);
+        
         setState(() {
           _isProcessing = false;
         });
+        
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("❌ Failed to create order")),
+          const SnackBar(
+            content: Text("📱 Order saved offline! Will sync when online."),
+            backgroundColor: Colors.orange,
+            duration: Duration(seconds: 4),
+          ),
         );
+        
+        widget.onOrderPlaced();
+        Navigator.pop(context);
         return;
       }
 

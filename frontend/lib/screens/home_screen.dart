@@ -5,6 +5,8 @@ import 'profile_screen.dart';
 import 'wallet_screen.dart';
 import 'subscription_screen.dart';
 import 'nutrition_screen.dart';
+import 'voice_order_screen.dart';
+import 'chatbot_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});

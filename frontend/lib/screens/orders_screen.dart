@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../models/order.dart';
 import 'qr_pickup_screen.dart';
+import 'student_id_verification_screen.dart';
+import 'crowd_monitor_screen.dart';
 
 class OrdersScreen extends StatefulWidget {
   const OrdersScreen({super.key});
@@ -59,7 +61,21 @@ class _OrdersScreenState extends State<OrdersScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("My Orders")),
+      appBar: AppBar(
+        title: const Text("My Orders"),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.people_outline),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const CrowdMonitorScreen()),
+              );
+            },
+            tooltip: "Crowd Monitor",
+          ),
+        ],
+      ),
       body: orders.isEmpty
           ? Center(
               child: Column(
@@ -202,6 +218,10 @@ class _OrdersScreenState extends State<OrdersScreen> {
                                   },
                                   icon: const Icon(Icons.qr_code),
                                   label: const Text("QR Code"),
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: const Color(0xFF10B981),
+                                    side: const BorderSide(color: Color(0xFF10B981)),
+                                  ),
                                 ),
                               ),
                               const SizedBox(width: 8),
@@ -217,15 +237,13 @@ class _OrdersScreenState extends State<OrdersScreen> {
                                   },
                                   icon: const Icon(Icons.badge),
                                   label: const Text("Verify ID"),
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: const Color(0xFF10B981),
+                                    side: const BorderSide(color: Color(0xFF10B981)),
+                                  ),
                                 ),
                               ),
                             ],
-                          ),
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: const Color(0xFF10B981),
-                                side: const BorderSide(color: Color(0xFF10B981)),
-                              ),
-                            ),
                           ),
                         ],
                         const SizedBox(height: 12),

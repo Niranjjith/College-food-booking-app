@@ -408,4 +408,123 @@ class ApiService {
     );
     return res.statusCode == 200;
   }
+
+  // ===== Order Prioritization =====
+  static Future<Map<String, dynamic>?> getPrioritizedQueue() async {
+    final token = await _getToken();
+    final res = await http.get(
+      Uri.parse("$baseUrl/prioritization/queue"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+    if (res.statusCode == 200) {
+      return jsonDecode(res.body);
+    }
+    return null;
+  }
+
+  // ===== Crowd Density =====
+  static Future<Map<String, dynamic>?> getCrowdDensity() async {
+    final token = await _getToken();
+    final res = await http.get(
+      Uri.parse("$baseUrl/crowd"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+    if (res.statusCode == 200) {
+      return jsonDecode(res.body);
+    }
+    return null;
+  }
+
+  static Future<Map<String, dynamic>?> getZoneCrowdDensity(String zone) async {
+    final token = await _getToken();
+    final res = await http.get(
+      Uri.parse("$baseUrl/crowd/$zone"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+    if (res.statusCode == 200) {
+      return jsonDecode(res.body);
+    }
+    return null;
+  }
+
+  // ===== Chatbot =====
+  static Future<Map<String, dynamic>> chatWithBot(String message) async {
+    final token = await _getToken();
+    final res = await http.post(
+      Uri.parse("$baseUrl/chatbot/chat"),
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer $token",
+      },
+      body: jsonEncode({"message": message}),
+    );
+    if (res.statusCode == 200) {
+      return jsonDecode(res.body);
+    }
+    return {
+      'response': 'Sorry, I encountered an error.',
+      'suggestions': ['Try Again', 'Menu'],
+    };
+  }
+
+  // ===== Events =====
+  static Future<List<Map<String, dynamic>>> getActiveEvents() async {
+    final res = await http.get(Uri.parse("$baseUrl/events/active"));
+    if (res.statusCode == 200) {
+      return List<Map<String, dynamic>>.from(jsonDecode(res.body));
+    }
+    return [];
+  }
+
+  static Future<List<Map<String, dynamic>>> getAllEvents({String? status}) async {
+    final token = await _getToken();
+    final url = status != null 
+        ? "$baseUrl/events?status=$status"
+        : "$baseUrl/events";
+    final res = await http.get(
+      Uri.parse(url),
+      headers: {"Authorization": "Bearer $token"},
+    );
+    if (res.statusCode == 200) {
+      return List<Map<String, dynamic>>.from(jsonDecode(res.body));
+    }
+    return [];
+  }
+
+  static Future<Map<String, dynamic>?> getEvent(String eventId) async {
+    final token = await _getToken();
+    final res = await http.get(
+      Uri.parse("$baseUrl/events/$eventId"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+    if (res.statusCode == 200) {
+      return jsonDecode(res.body);
+    }
+    return null;
+  }
+
+  static Future<bool> registerForEvent(String eventId) async {
+    final token = await _getToken();
+    final res = await http.post(
+      Uri.parse("$baseUrl/events/$eventId/register"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+    return res.statusCode == 200;
+  }
+
+  static Future<Map<String, dynamic>?> orderEventBundle(String eventId, String bundleId) async {
+    final token = await _getToken();
+    final res = await http.post(
+      Uri.parse("$baseUrl/events/$eventId/order-bundle"),
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer $token",
+      },
+      body: jsonEncode({"bundleId": bundleId}),
+    );
+    if (res.statusCode == 201) {
+      return jsonDecode(res.body);
+    }
+    return null;
+  }
 }
