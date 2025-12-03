@@ -180,3 +180,4 @@ function getRandomResponse(responses) {
   return responses[Math.floor(Math.random() * responses.length)];
 }
 
+

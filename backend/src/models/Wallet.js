@@ -65,3 +65,4 @@ walletSchema.methods.updateStreak = function() {
 
 export default mongoose.model('Wallet', walletSchema);
 
+

@@ -27,3 +27,4 @@ router.get('/:id/stats', protect, adminOnly, getEventStats);
 
 export default router;
 
+

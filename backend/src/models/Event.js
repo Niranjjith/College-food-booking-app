@@ -43,3 +43,4 @@ const eventSchema = new mongoose.Schema(
 
 export default mongoose.model('Event', eventSchema);
 
+

@@ -181,3 +181,4 @@ export const getTrendingFoods = catchAsync(async (req, res) => {
   res.json(trending);
 });
 
+

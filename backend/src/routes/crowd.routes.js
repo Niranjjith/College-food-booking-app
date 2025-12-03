@@ -14,3 +14,4 @@ router.post('/update', protect, updateCrowdDensity); // For CCTV/AI system
 
 export default router;
 
+

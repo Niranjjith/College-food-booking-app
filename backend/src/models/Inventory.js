@@ -17,3 +17,4 @@ const inventoryItemSchema = new mongoose.Schema(
 
 export default mongoose.model('Inventory', inventoryItemSchema);
 
+

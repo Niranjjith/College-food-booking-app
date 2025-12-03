@@ -22,3 +22,4 @@ const userPreferenceSchema = new mongoose.Schema(
 
 export default mongoose.model('UserPreference', userPreferenceSchema);
 
+

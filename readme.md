@@ -450,6 +450,8 @@ For support, email support@example.com or create an issue in the repository.
 - Order management system
 - Demand forecasting analytics
 
+![Admin Dashboard](Screenshot/Admin%20page.png)
+
 ---
 
 **Made with ❤️ using Flutter, React, and Node.js**

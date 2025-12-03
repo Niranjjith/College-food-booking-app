@@ -15,3 +15,4 @@ foodIngredientSchema.index({ food: 1, ingredient: 1 });
 
 export default mongoose.model('FoodIngredient', foodIngredientSchema);
 
+

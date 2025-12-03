@@ -14,3 +14,4 @@ router.get('/trending', getTrendingFoods);
 
 export default router;
 
+
