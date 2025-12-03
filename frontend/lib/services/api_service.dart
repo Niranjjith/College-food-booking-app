@@ -128,4 +128,44 @@ class ApiService {
     }
     return [];
   }
+
+  // ===== Payments =====
+  static Future<Map<String, dynamic>?> createRazorpayOrder(String orderId) async {
+    final token = await _getToken();
+    final res = await http.post(
+      Uri.parse("$baseUrl/payments/razorpay/create-order"),
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer $token",
+      },
+      body: jsonEncode({"orderId": orderId}),
+    );
+    if (res.statusCode == 200) {
+      return jsonDecode(res.body) as Map<String, dynamic>;
+    }
+    return null;
+  }
+
+  static Future<bool> verifyRazorpayPayment({
+    required String orderId,
+    required String razorpayOrderId,
+    required String razorpayPaymentId,
+    required String razorpaySignature,
+  }) async {
+    final token = await _getToken();
+    final res = await http.post(
+      Uri.parse("$baseUrl/payments/razorpay/verify"),
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer $token",
+      },
+      body: jsonEncode({
+        "orderId": orderId,
+        "razorpay_order_id": razorpayOrderId,
+        "razorpay_payment_id": razorpayPaymentId,
+        "razorpay_signature": razorpaySignature,
+      }),
+    );
+    return res.statusCode == 200;
+  }
 }

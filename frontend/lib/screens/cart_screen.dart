@@ -1,25 +1,173 @@
 import 'package:flutter/material.dart';
+import 'package:razorpay_flutter/razorpay_flutter.dart';
 import '../services/api_service.dart';
+import '../models/order.dart';
 
-class CartScreen extends StatelessWidget {
+class CartScreen extends StatefulWidget {
   final List<Map<String, dynamic>> cartItems;
   final VoidCallback onOrderPlaced;
 
   const CartScreen({super.key, required this.cartItems, required this.onOrderPlaced});
 
-  void _checkout(BuildContext context) async {
-    if (cartItems.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Cart is empty")));
+  @override
+  State<CartScreen> createState() => _CartScreenState();
+}
+
+class _CartScreenState extends State<CartScreen> {
+  late Razorpay _razorpay;
+  String _selectedPaymentMethod = 'razorpay';
+  bool _isProcessing = false;
+  Order? _currentOrder;
+
+  @override
+  void initState() {
+    super.initState();
+    _razorpay = Razorpay();
+    _razorpay.on(Razorpay.EVENT_PAYMENT_SUCCESS, _handlePaymentSuccess);
+    _razorpay.on(Razorpay.EVENT_PAYMENT_ERROR, _handlePaymentError);
+    _razorpay.on(Razorpay.EVENT_EXTERNAL_WALLET, _handleExternalWallet);
+  }
+
+  @override
+  void dispose() {
+    _razorpay.clear();
+    super.dispose();
+  }
+
+  void _handlePaymentSuccess(PaymentSuccessResponse response) async {
+    if (_currentOrder == null) return;
+
+    final verified = await ApiService.verifyRazorpayPayment(
+      orderId: _currentOrder!.id,
+      razorpayOrderId: response.orderId ?? '',
+      razorpayPaymentId: response.paymentId ?? '',
+      razorpaySignature: response.signature ?? '',
+    );
+
+    setState(() {
+      _isProcessing = false;
+    });
+
+    if (verified) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("✅ Payment successful! Order placed."),
+            backgroundColor: Color(0xFF10B981),
+          ),
+        );
+        widget.onOrderPlaced();
+        Navigator.pop(context);
+      }
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("❌ Payment verification failed"),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  void _handlePaymentError(PaymentFailureResponse response) {
+    setState(() {
+      _isProcessing = false;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text("Payment failed: ${response.message ?? 'Unknown error'}"),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
+
+  void _handleExternalWallet(ExternalWalletResponse response) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text("External wallet selected: ${response.walletName}"),
+      ),
+    );
+  }
+
+  Future<void> _checkout(BuildContext context) async {
+    if (widget.cartItems.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Cart is empty")),
+      );
       return;
     }
 
-    final order = await ApiService.createOrder(cartItems);
-    if (order != null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("✅ Order placed successfully!")));
-      onOrderPlaced();
-      Navigator.pop(context);
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("❌ Failed to place order")));
+    setState(() {
+      _isProcessing = true;
+    });
+
+    try {
+      // Create order first
+      final order = await ApiService.createOrder(widget.cartItems);
+      if (order == null) {
+        setState(() {
+          _isProcessing = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("❌ Failed to create order")),
+        );
+        return;
+      }
+
+      _currentOrder = order;
+
+      if (_selectedPaymentMethod == 'razorpay') {
+        // Create Razorpay order
+        final razorpayOrder = await ApiService.createRazorpayOrder(order.id);
+        if (razorpayOrder == null) {
+          setState(() {
+            _isProcessing = false;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("❌ Failed to initialize payment")),
+          );
+          return;
+        }
+
+        // Open Razorpay checkout
+        final options = {
+          'key': razorpayOrder['key'],
+          'amount': razorpayOrder['amount'],
+          'name': 'Food Booking App',
+          'description': 'Order Payment',
+          'prefill': {
+            'contact': '',
+            'email': '',
+          },
+          'external': {
+            'wallets': ['paytm']
+          }
+        };
+
+        _razorpay.open(options);
+      } else {
+        // Cash on delivery or other payment methods
+        setState(() {
+          _isProcessing = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("✅ Order placed successfully!"),
+            backgroundColor: Color(0xFF10B981),
+          ),
+        );
+        widget.onOrderPlaced();
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      setState(() {
+        _isProcessing = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error: $e")),
+      );
     }
   }
 
@@ -158,15 +306,80 @@ class CartScreen extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 16),
+                      
+                      // Payment Method Selection
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade50,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.grey.shade200),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              "Payment Method",
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF111827),
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            RadioListTile<String>(
+                              value: 'razorpay',
+                              groupValue: _selectedPaymentMethod,
+                              onChanged: _isProcessing
+                                  ? null
+                                  : (value) {
+                                      setState(() {
+                                        _selectedPaymentMethod = value!;
+                                      });
+                                    },
+                              title: const Text("Razorpay"),
+                              subtitle: const Text("Pay with UPI, Cards, Wallets"),
+                              activeColor: const Color(0xFF10B981),
+                              contentPadding: EdgeInsets.zero,
+                            ),
+                            RadioListTile<String>(
+                              value: 'cod',
+                              groupValue: _selectedPaymentMethod,
+                              onChanged: _isProcessing
+                                  ? null
+                                  : (value) {
+                                      setState(() {
+                                        _selectedPaymentMethod = value!;
+                                      });
+                                    },
+                              title: const Text("Cash on Delivery"),
+                              subtitle: const Text("Pay when you receive"),
+                              activeColor: const Color(0xFF10B981),
+                              contentPadding: EdgeInsets.zero,
+                            ),
+                          ],
+                        ),
+                      ),
+                      
+                      const SizedBox(height: 16),
                       SizedBox(
                         width: double.infinity,
                         height: 56,
                         child: ElevatedButton(
-                          onPressed: () => _checkout(context),
-                          child: const Text(
-                            "Place Order",
-                            style: TextStyle(fontSize: 16),
-                          ),
+                          onPressed: _isProcessing ? null : () => _checkout(context),
+                          child: _isProcessing
+                              ? const SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                  ),
+                                )
+                              : const Text(
+                                  "Place Order",
+                                  style: TextStyle(fontSize: 16),
+                                ),
                         ),
                       ),
                     ],

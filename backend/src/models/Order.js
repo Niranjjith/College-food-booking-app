@@ -19,6 +19,7 @@ const orderSchema = new mongoose.Schema(
     payment: {
       provider: { type: String, default: 'stripe' },
       intentId: String,
+      paymentId: String,
       paidAt: Date
     },
     billUrl: String    // link to a PDF/HTML bill (could be generated later)

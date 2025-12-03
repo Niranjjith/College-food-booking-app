@@ -8,6 +8,7 @@ import {
   markPaid,
   adminSummary,
   adminSalesTrend,
+  demandForecasting,
 } from "../controllers/orders.controller.js";
 
 const router = Router();
@@ -21,6 +22,7 @@ router.get("/:id", protect, getOrder);
 router.get("/admin/daily", protect, adminOnly, adminDailyOrders);
 router.get("/admin/summary", protect, adminOnly, adminSummary);
 router.get("/admin/sales-trend", protect, adminOnly, adminSalesTrend);
+router.get("/admin/demand-forecast", protect, adminOnly, demandForecasting);
 router.patch("/:id/mark-paid", protect, adminOnly, markPaid);
 
 export default router;
