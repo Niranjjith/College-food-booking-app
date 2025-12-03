@@ -46,7 +46,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     
     if (token != null) {
       // Verify token is still valid
-      final user = await ApiService.getMe();
+      final user = await ApiService.getProfile();
       if (user != null) {
         Navigator.pushReplacement(
           context,

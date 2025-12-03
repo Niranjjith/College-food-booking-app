@@ -27,10 +27,28 @@ class _FoodsScreenState extends State<FoodsScreen> {
   }
 
   void _loadFoods() async {
-    final list = await ApiService.getFoods();
-    setState(() {
-      foods = list;
-    });
+    try {
+      final list = await ApiService.getFoods();
+      setState(() {
+        foods = list;
+      });
+      // Cache foods for offline mode
+      await OfflineService.cacheFoods(list);
+    } catch (e) {
+      // If online fails, try loading from cache
+      final cached = await OfflineService.getCachedFoods();
+      if (cached.isNotEmpty) {
+        setState(() {
+          foods = cached;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Showing cached data. Check your connection."),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+    }
   }
 
   void _loadRecommendations() async {

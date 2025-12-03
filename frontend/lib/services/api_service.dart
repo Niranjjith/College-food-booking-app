@@ -43,11 +43,18 @@ class ApiService {
     return null;
   }
 
-  static Future<User?> register(String name, String email, String password) async {
+  static Future<User?> register(String name, String email, String password, {String? registrationNumber, String? studentId}) async {
+    final body = <String, dynamic>{"name": name, "email": email, "password": password};
+    if (registrationNumber != null && registrationNumber.isNotEmpty) {
+      body["registrationNumber"] = registrationNumber;
+    }
+    if (studentId != null && studentId.isNotEmpty) {
+      body["studentId"] = studentId;
+    }
     final res = await http.post(
       Uri.parse("$baseUrl/auth/register"),
       headers: {"Content-Type": "application/json"},
-      body: jsonEncode({"name": name, "email": email, "password": password}),
+      body: jsonEncode(body),
     );
     if (res.statusCode == 201) {
       final data = jsonDecode(res.body);
@@ -372,5 +379,33 @@ class ApiService {
       return jsonDecode(res.body) as List;
     }
     return [];
+  }
+
+  // ===== Nutrition & Dietary Goals =====
+  static Future<bool> updateDietaryGoals(Map<String, double> goals) async {
+    final token = await _getToken();
+    final res = await http.patch(
+      Uri.parse("$baseUrl/auth/me"),
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer $token",
+      },
+      body: jsonEncode({"dietaryGoals": goals}),
+    );
+    return res.statusCode == 200;
+  }
+
+  // ===== Student ID Verification =====
+  static Future<bool> verifyStudentId(String orderId, String studentId) async {
+    final token = await _getToken();
+    final res = await http.post(
+      Uri.parse("$baseUrl/qr/verify-student"),
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer $token",
+      },
+      body: jsonEncode({"orderId": orderId, "studentId": studentId}),
+    );
+    return res.statusCode == 200;
   }
 }

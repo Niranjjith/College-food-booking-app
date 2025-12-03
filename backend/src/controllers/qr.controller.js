@@ -42,6 +42,42 @@ export const generateQRCode = catchAsync(async (req, res) => {
 });
 
 /**
+ * Verify Student ID for pickup
+ */
+export const verifyStudentId = catchAsync(async (req, res) => {
+  const { orderId, studentId } = req.body;
+  
+  const order = await Order.findById(orderId).populate('user', 'studentId registrationNumber');
+  
+  if (!order) {
+    return res.status(404).json({ message: 'Order not found' });
+  }
+
+  // Check if student ID matches
+  if (order.user.studentId !== studentId && order.user.registrationNumber !== studentId) {
+    return res.status(400).json({ message: 'Student ID does not match' });
+  }
+
+  // Check if order is ready
+  if (order.status !== 'ready') {
+    return res.status(400).json({ 
+      message: `Order is ${order.status}, not ready for pickup`,
+      status: order.status,
+    });
+  }
+
+  res.json({
+    success: true,
+    message: 'Student ID verified',
+    order: {
+      id: order._id,
+      user: order.user,
+      status: order.status,
+    },
+  });
+});
+
+/**
  * Verify QR code for pickup (Staff/Admin)
  */
 export const verifyQRCode = catchAsync(async (req, res) => {

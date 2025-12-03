@@ -188,19 +188,39 @@ class _OrdersScreenState extends State<OrdersScreen> {
                         ],
                         if (o.status == 'ready' || o.status == 'paid' || o.status == 'preparing') ...[
                           const SizedBox(height: 12),
-                          SizedBox(
-                            width: double.infinity,
-                            child: OutlinedButton.icon(
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => QRPickupScreen(orderId: o.id),
-                                  ),
-                                );
-                              },
-                              icon: const Icon(Icons.qr_code),
-                              label: const Text("Show QR Code"),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: OutlinedButton.icon(
+                                  onPressed: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => QRPickupScreen(orderId: o.id),
+                                      ),
+                                    );
+                                  },
+                                  icon: const Icon(Icons.qr_code),
+                                  label: const Text("QR Code"),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: OutlinedButton.icon(
+                                  onPressed: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => StudentIdVerificationScreen(orderId: o.id),
+                                      ),
+                                    );
+                                  },
+                                  icon: const Icon(Icons.badge),
+                                  label: const Text("Verify ID"),
+                                ),
+                              ),
+                            ],
+                          ),
                               style: OutlinedButton.styleFrom(
                                 foregroundColor: const Color(0xFF10B981),
                                 side: const BorderSide(color: Color(0xFF10B981)),

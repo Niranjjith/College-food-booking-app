@@ -4,6 +4,7 @@ import '../models/user.dart';
 import 'login_screen.dart';
 import 'subscription_screen.dart';
 import 'feedback_screen.dart';
+import 'nutrition_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -204,6 +205,86 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                       )
                     : const Text("Save Changes"),
+              ),
+            ),
+            const SizedBox(height: 24),
+            
+            // Quick Actions
+            const Text(
+              "Quick Actions",
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF111827),
+              ),
+            ),
+            const SizedBox(height: 16),
+            
+            // Nutrition Tracker
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: OutlinedButton.icon(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const NutritionScreen(),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.monitor_heart),
+                label: const Text("Nutrition Tracker"),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFF10B981),
+                  side: const BorderSide(color: Color(0xFF10B981)),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            
+            // Subscription Link
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: OutlinedButton.icon(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const SubscriptionScreen(),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.calendar_today),
+                label: const Text("My Meal Plans"),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFF10B981),
+                  side: const BorderSide(color: Color(0xFF10B981)),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            
+            // Feedback Link
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: OutlinedButton.icon(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const FeedbackScreen(),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.feedback),
+                label: const Text("Feedback & Support"),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFF10B981),
+                  side: const BorderSide(color: Color(0xFF10B981)),
+                ),
               ),
             ),
             const SizedBox(height: 24),

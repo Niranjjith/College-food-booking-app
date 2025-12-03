@@ -59,6 +59,18 @@ export const updateProfile = catchAsync(async (req, res) => {
 
   if (req.body.email) user.email = req.body.email;
   if (req.body.password) user.password = req.body.password;
+  if (req.body.dietaryGoals) user.dietaryGoals = req.body.dietaryGoals;
+  if (req.body.studentId) user.studentId = req.body.studentId;
+  if (req.body.registrationNumber) {
+    const regExists = await User.findOne({ 
+      registrationNumber: req.body.registrationNumber,
+      _id: { $ne: user._id }
+    });
+    if (regExists) {
+      return res.status(400).json({ message: 'Registration number already in use' });
+    }
+    user.registrationNumber = req.body.registrationNumber;
+  }
 
   await user.save();
   res.json({ message: "Profile updated", user });
