@@ -6,6 +6,7 @@ import '../widgets/food_card.dart';
 import 'cart_screen.dart';
 import 'voice_order_screen.dart';
 import 'chatbot_screen.dart';
+import 'events_screen.dart';
 
 class FoodsScreen extends StatefulWidget {
   const FoodsScreen({super.key});

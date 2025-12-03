@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
+import '../services/offline_service.dart';
 import '../models/order.dart';
 import 'qr_pickup_screen.dart';
 import 'student_id_verification_screen.dart';
