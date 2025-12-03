@@ -2,6 +2,7 @@ import Order from "../models/Order.js";
 import Food from "../models/Food.js";
 import User from "../models/User.js";
 import catchAsync from "../utils/catchAsync.js";
+import { updateStockAfterOrder } from "./inventory.controller.js";
 
 /**
  * Student - Create Order
@@ -31,6 +32,28 @@ export const createOrder = catchAsync(async (req, res) => {
     subtotal,
     status: "pending",
   });
+
+  // Calculate initial preparation time estimate
+  const pendingCount = await Order.countDocuments({
+    status: { $in: ['paid', 'preparing'] },
+    createdAt: { $lt: order.createdAt },
+  });
+  
+  let totalPrepTime = 0;
+  for (const item of orderItems) {
+    const food = foodMap[item.food.toString()];
+    if (food && food.preparationTime) {
+      totalPrepTime += food.preparationTime * item.qty;
+    }
+  }
+  
+  const estimatedTime = Math.ceil(totalPrepTime + (pendingCount * 3));
+  order.preparation = {
+    estimatedTime,
+    queuePosition: pendingCount + 1,
+    kitchenLoad: pendingCount,
+  };
+  await order.save();
 
   res.status(201).json(order);
 });
@@ -125,6 +148,31 @@ export const markPaid = catchAsync(async (req, res) => {
 
   order.status = "paid";
   order.payment = { provider: "manual", paidAt: new Date() };
+  
+  // Update inventory when order is paid
+  await updateStockAfterOrder(order._id);
+  
+  // Recalculate preparation time
+  const pendingCount = await Order.countDocuments({
+    status: { $in: ['paid', 'preparing'] },
+    createdAt: { $lt: order.createdAt },
+  });
+  
+  let totalPrepTime = 0;
+  for (const item of order.items) {
+    const food = await Food.findById(item.food);
+    if (food && food.preparationTime) {
+      totalPrepTime += food.preparationTime * item.qty;
+    }
+  }
+  
+  const estimatedTime = Math.ceil(totalPrepTime + (pendingCount * 3));
+  order.preparation = {
+    estimatedTime,
+    queuePosition: pendingCount + 1,
+    kitchenLoad: pendingCount,
+  };
+  
   await order.save();
 
   res.json(order);

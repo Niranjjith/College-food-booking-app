@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../models/order.dart';
@@ -11,11 +12,20 @@ class OrdersScreen extends StatefulWidget {
 
 class _OrdersScreenState extends State<OrdersScreen> {
   List<Order> orders = [];
+  Map<String, Map<String, dynamic>> orderStatuses = {};
+  Timer? _statusTimer;
 
   @override
   void initState() {
     super.initState();
     _loadOrders();
+    _startStatusPolling();
+  }
+
+  @override
+  void dispose() {
+    _statusTimer?.cancel();
+    super.dispose();
   }
 
   void _loadOrders() async {
@@ -23,6 +33,26 @@ class _OrdersScreenState extends State<OrdersScreen> {
     setState(() {
       orders = list;
     });
+    _updateOrderStatuses();
+  }
+
+  void _startStatusPolling() {
+    _statusTimer = Timer.periodic(const Duration(seconds: 10), (timer) {
+      _updateOrderStatuses();
+    });
+  }
+
+  void _updateOrderStatuses() async {
+    for (final order in orders) {
+      if (order.status == 'paid' || order.status == 'preparing' || order.status == 'ready') {
+        final status = await ApiService.getOrderStatus(order.id);
+        if (status != null && mounted) {
+          setState(() {
+            orderStatuses[order.id] = status;
+          });
+        }
+      }
+    }
   }
 
   @override
@@ -64,7 +94,11 @@ class _OrdersScreenState extends State<OrdersScreen> {
               itemCount: orders.length,
               itemBuilder: (_, i) {
                 final o = orders[i];
-                final isPaid = o.status.toLowerCase() == 'paid';
+                final isPaid = o.status.toLowerCase() == 'paid' || o.status.toLowerCase() == 'preparing' || o.status.toLowerCase() == 'ready';
+                final statusData = orderStatuses[o.id];
+                final prepInfo = statusData?['preparation'];
+                final remainingTime = prepInfo?['remainingTime'] as int?;
+                
                 return Container(
                   margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
@@ -113,6 +147,44 @@ class _OrdersScreenState extends State<OrdersScreen> {
                             ),
                           ],
                         ),
+                        if (remainingTime != null && remainingTime > 0) ...[
+                          const SizedBox(height: 12),
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF10B981).withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(
+                                  Icons.access_time,
+                                  color: Color(0xFF10B981),
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  "ETA: ${remainingTime} minutes",
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF10B981),
+                                  ),
+                                ),
+                                if (prepInfo?['queuePosition'] != null) ...[
+                                  const SizedBox(width: 12),
+                                  Text(
+                                    "Queue: #${prepInfo['queuePosition']}",
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey.shade600,
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                        ],
                         const SizedBox(height: 12),
                         const Divider(),
                         const SizedBox(height: 12),

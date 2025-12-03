@@ -13,18 +13,37 @@ class FoodsScreen extends StatefulWidget {
 
 class _FoodsScreenState extends State<FoodsScreen> {
   List<Food> foods = [];
+  List<Food> recommendations = [];
+  List<Food> trending = [];
   List<Map<String, dynamic>> cart = [];
+  bool showRecommendations = true;
 
   @override
   void initState() {
     super.initState();
     _loadFoods();
+    _loadRecommendations();
+    _loadTrending();
   }
 
   void _loadFoods() async {
     final list = await ApiService.getFoods();
     setState(() {
       foods = list;
+    });
+  }
+
+  void _loadRecommendations() async {
+    final list = await ApiService.getRecommendations();
+    setState(() {
+      recommendations = list.map((item) => Food.fromJson(item['food'])).toList();
+    });
+  }
+
+  void _loadTrending() async {
+    final list = await ApiService.getTrendingFoods();
+    setState(() {
+      trending = list.map((item) => Food.fromJson(item)).toList();
     });
   }
 
@@ -130,13 +149,94 @@ class _FoodsScreenState extends State<FoodsScreen> {
                 ],
               ),
             )
-          : ListView.builder(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              itemCount: foods.length,
-              itemBuilder: (_, i) {
-                final food = foods[i];
-                return FoodCard(food: food, onAdd: () => _addToCart(food));
+          : RefreshIndicator(
+              onRefresh: () async {
+                _loadFoods();
+                _loadRecommendations();
+                _loadTrending();
               },
+              child: ListView(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                children: [
+                  // Recommendations Section
+                  if (recommendations.isNotEmpty && showRecommendations) ...[
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.star, color: Color(0xFF10B981), size: 20),
+                          const SizedBox(width: 8),
+                          const Text(
+                            "Recommended for You",
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF111827),
+                            ),
+                          ),
+                          const Spacer(),
+                          TextButton(
+                            onPressed: () {
+                              setState(() {
+                                showRecommendations = false;
+                              });
+                            },
+                            child: const Text("Hide"),
+                          ),
+                        ],
+                      ),
+                    ),
+                    ...recommendations.map((food) => FoodCard(
+                          food: food,
+                          onAdd: () => _addToCart(food),
+                        )),
+                    const SizedBox(height: 16),
+                  ],
+                  
+                  // Trending Section
+                  if (trending.isNotEmpty) ...[
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.trending_up, color: Color(0xFF10B981), size: 20),
+                          const SizedBox(width: 8),
+                          const Text(
+                            "Trending Now",
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF111827),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    ...trending.take(3).map((food) => FoodCard(
+                          food: food,
+                          onAdd: () => _addToCart(food),
+                        )),
+                    const SizedBox(height: 16),
+                  ],
+                  
+                  // All Foods Section
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: const Text(
+                      "All Items",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF111827),
+                      ),
+                    ),
+                  ),
+                  ...foods.map((food) => FoodCard(
+                        food: food,
+                        onAdd: () => _addToCart(food),
+                      )),
+                ],
+              ),
             ),
     );
   }

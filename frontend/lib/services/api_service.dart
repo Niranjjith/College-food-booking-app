@@ -168,4 +168,52 @@ class ApiService {
     );
     return res.statusCode == 200;
   }
+
+  // ===== Queue & ETA =====
+  static Future<Map<String, dynamic>?> getOrderStatus(String orderId) async {
+    final token = await _getToken();
+    final res = await http.get(
+      Uri.parse("$baseUrl/queue/order/$orderId/status"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+    if (res.statusCode == 200) {
+      return jsonDecode(res.body) as Map<String, dynamic>;
+    }
+    return null;
+  }
+
+  // ===== Recommendations =====
+  static Future<List<dynamic>> getRecommendations() async {
+    final token = await _getToken();
+    final res = await http.get(
+      Uri.parse("$baseUrl/recommendations/me"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+    if (res.statusCode == 200) {
+      final data = jsonDecode(res.body) as Map<String, dynamic>;
+      return data['recommendations'] as List;
+    }
+    return [];
+  }
+
+  static Future<List<dynamic>> getTrendingFoods() async {
+    final res = await http.get(Uri.parse("$baseUrl/recommendations/trending"));
+    if (res.statusCode == 200) {
+      return jsonDecode(res.body) as List;
+    }
+    return [];
+  }
+
+  static Future<bool> updatePreferences(Map<String, dynamic> preferences) async {
+    final token = await _getToken();
+    final res = await http.put(
+      Uri.parse("$baseUrl/recommendations/preferences"),
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer $token",
+      },
+      body: jsonEncode(preferences),
+    );
+    return res.statusCode == 200;
+  }
 }
