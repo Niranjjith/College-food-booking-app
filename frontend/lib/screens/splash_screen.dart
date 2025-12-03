@@ -114,18 +114,36 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                   const Text(
                     "Food Booking",
                     style: TextStyle(
-                      fontSize: 32,
+                      fontSize: 36,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
-                      letterSpacing: 1.2,
+                      letterSpacing: 1.5,
+                      shadows: [
+                        Shadow(
+                          color: Colors.black26,
+                          blurRadius: 10,
+                          offset: Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  const Text(
+                    "Nilgiri College",
+                    style: TextStyle(
+                      fontSize: 18,
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 1.0,
                     ),
                   ),
                   const SizedBox(height: 8),
                   const Text(
-                    "Order your favorite meals",
+                    "Order your favorite meals with ease",
                     style: TextStyle(
                       fontSize: 16,
                       color: Colors.white70,
+                      letterSpacing: 0.5,
                     ),
                   ),
                   const SizedBox(height: 48),

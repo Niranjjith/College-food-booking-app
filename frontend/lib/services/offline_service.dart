@@ -170,7 +170,7 @@ class OfflineService {
   }
 
   // Sync offline orders to server
-  static Future<Map<String, dynamic>> syncOfflineOrders(Future<Map<String, dynamic>> Function(Map<String, dynamic>) createOrderFn) async {
+  static Future<Map<String, dynamic>> syncOfflineOrders(Future<Map<String, dynamic>?> Function(Map<String, dynamic>) createOrderFn) async {
     final unsynced = await getUnsyncedOrders();
     int successCount = 0;
     int failCount = 0;
@@ -186,8 +186,8 @@ class OfflineService {
 
         final result = await createOrderFn(orderData);
         if (result != null) {
-          await markOrderSynced(order['_offlineId']);
-          syncedIds.add(order['_offlineId']);
+          await markOrderSynced(order['_offlineId'] as String);
+          syncedIds.add(order['_offlineId'] as String);
           successCount++;
         } else {
           failCount++;
@@ -201,10 +201,10 @@ class OfflineService {
     await removeSyncedOrders();
 
     return {
-      total: unsynced.length,
-      success: successCount,
-      failed: failCount,
-      syncedIds,
+      'total': unsynced.length,
+      'success': successCount,
+      'failed': failCount,
+      'syncedIds': syncedIds,
     };
   }
 }

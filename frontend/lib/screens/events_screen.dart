@@ -93,7 +93,7 @@ class _EventsScreenState extends State<EventsScreen> {
                   ),
                 )
               : RefreshIndicator(
-                  onRefresh: _loadEvents,
+                  onRefresh: () async => _loadEvents(),
                   child: ListView.builder(
                     padding: const EdgeInsets.all(16),
                     itemCount: _events.length,
