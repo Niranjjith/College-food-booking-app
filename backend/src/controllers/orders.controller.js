@@ -24,7 +24,11 @@ export const createOrder = catchAsync(async (req, res) => {
     return { food: f._id, name: f.name, qty: i.qty, price: f.price };
   });
 
-  const subtotal = orderItems.reduce((sum, i) => sum + i.price * i.qty, 0);
+  let subtotal = orderItems.reduce((sum, i) => sum + i.price * i.qty, 0);
+  
+  // Apply discounts from wallet rewards (if user has active discounts)
+  // This would be calculated based on user's reward tier, streak, etc.
+  // For now, we'll apply it in the wallet payment controller
 
   const order = await Order.create({
     user: req.user._id,

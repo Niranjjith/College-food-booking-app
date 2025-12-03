@@ -216,4 +216,135 @@ class ApiService {
     );
     return res.statusCode == 200;
   }
+
+  // ===== Wallet =====
+  static Future<Map<String, dynamic>?> getWallet() async {
+    final token = await _getToken();
+    final res = await http.get(
+      Uri.parse("$baseUrl/wallet"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+    if (res.statusCode == 200) {
+      return jsonDecode(res.body) as Map<String, dynamic>;
+    }
+    return null;
+  }
+
+  static Future<bool> topUpWallet(double amount, String paymentMethod) async {
+    final token = await _getToken();
+    final res = await http.post(
+      Uri.parse("$baseUrl/wallet/topup"),
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer $token",
+      },
+      body: jsonEncode({"amount": amount, "paymentMethod": paymentMethod}),
+    );
+    return res.statusCode == 200;
+  }
+
+  static Future<Map<String, dynamic>?> payWithWallet(String orderId) async {
+    final token = await _getToken();
+    final res = await http.post(
+      Uri.parse("$baseUrl/wallet/pay"),
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer $token",
+      },
+      body: jsonEncode({"orderId": orderId}),
+    );
+    if (res.statusCode == 200) {
+      return jsonDecode(res.body) as Map<String, dynamic>;
+    }
+    return null;
+  }
+
+  static Future<List<dynamic>> getWalletTransactions() async {
+    final token = await _getToken();
+    final res = await http.get(
+      Uri.parse("$baseUrl/wallet/transactions"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+    if (res.statusCode == 200) {
+      final data = jsonDecode(res.body) as Map<String, dynamic>;
+      return data['transactions'] as List;
+    }
+    return [];
+  }
+
+  static Future<Map<String, dynamic>?> getRewards() async {
+    final token = await _getToken();
+    final res = await http.get(
+      Uri.parse("$baseUrl/wallet/rewards"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+    if (res.statusCode == 200) {
+      return jsonDecode(res.body) as Map<String, dynamic>;
+    }
+    return null;
+  }
+
+  static Future<bool> redeemPoints(int points) async {
+    final token = await _getToken();
+    final res = await http.post(
+      Uri.parse("$baseUrl/wallet/redeem"),
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer $token",
+      },
+      body: jsonEncode({"points": points}),
+    );
+    return res.statusCode == 200;
+  }
+
+  // ===== QR Code =====
+  static Future<Map<String, dynamic>?> generateQRCode(String orderId) async {
+    final token = await _getToken();
+    final res = await http.get(
+      Uri.parse("$baseUrl/qr/order/$orderId"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+    if (res.statusCode == 200) {
+      return jsonDecode(res.body) as Map<String, dynamic>;
+    }
+    return null;
+  }
+
+  // ===== Subscriptions =====
+  static Future<Map<String, dynamic>?> createSubscription(Map<String, dynamic> data) async {
+    final token = await _getToken();
+    final res = await http.post(
+      Uri.parse("$baseUrl/subscriptions"),
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer $token",
+      },
+      body: jsonEncode(data),
+    );
+    if (res.statusCode == 201) {
+      return jsonDecode(res.body) as Map<String, dynamic>;
+    }
+    return null;
+  }
+
+  static Future<List<dynamic>> getMySubscriptions() async {
+    final token = await _getToken();
+    final res = await http.get(
+      Uri.parse("$baseUrl/subscriptions/me"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+    if (res.statusCode == 200) {
+      return jsonDecode(res.body) as List;
+    }
+    return [];
+  }
+
+  static Future<bool> cancelSubscription(String subscriptionId) async {
+    final token = await _getToken();
+    final res = await http.post(
+      Uri.parse("$baseUrl/subscriptions/$subscriptionId/cancel"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+    return res.statusCode == 200;
+  }
 }

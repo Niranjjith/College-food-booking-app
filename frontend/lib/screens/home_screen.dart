@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'foods_screen.dart';
 import 'orders_screen.dart';
 import 'profile_screen.dart';
+import 'wallet_screen.dart';
+import 'subscription_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -16,6 +18,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final screens = [
     const FoodsScreen(),
     const OrdersScreen(),
+    const WalletScreen(),
     const ProfileScreen(),
   ];
 
@@ -60,6 +63,11 @@ class _HomeScreenState extends State<HomeScreen> {
               icon: Icon(Icons.receipt_long),
               activeIcon: Icon(Icons.receipt_long),
               label: "Orders",
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.account_balance_wallet),
+              activeIcon: Icon(Icons.account_balance_wallet),
+              label: "Wallet",
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.person_outline),

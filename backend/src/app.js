@@ -11,6 +11,9 @@ import paymentRoutes, { webhookRoute } from "./routes/payments.routes.js";
 import queueRoutes from "./routes/queue.routes.js";
 import inventoryRoutes from "./routes/inventory.routes.js";
 import recommendationRoutes from "./routes/recommendations.routes.js";
+import walletRoutes from "./routes/wallet.routes.js";
+import qrRoutes from "./routes/qr.routes.js";
+import subscriptionRoutes from "./routes/subscription.routes.js";
 
 dotenv.config();
 connectDB();
@@ -35,6 +38,9 @@ app.use("/api/webhooks", webhookRoute);
 app.use("/api/queue", queueRoutes);
 app.use("/api/inventory", inventoryRoutes);
 app.use("/api/recommendations", recommendationRoutes);
+app.use("/api/wallet", walletRoutes);
+app.use("/api/qr", qrRoutes);
+app.use("/api/subscriptions", subscriptionRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));

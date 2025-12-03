@@ -1,7 +1,9 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 import '../services/api_service.dart';
 import '../models/order.dart';
+import 'wallet_screen.dart';
 
 class CartScreen extends StatefulWidget {
   final List<Map<String, dynamic>> cartItems;
@@ -18,6 +20,8 @@ class _CartScreenState extends State<CartScreen> {
   String _selectedPaymentMethod = 'razorpay';
   bool _isProcessing = false;
   Order? _currentOrder;
+  Map<String, dynamic>? _wallet;
+  Map<String, dynamic>? _rewards;
 
   @override
   void initState() {
@@ -26,6 +30,16 @@ class _CartScreenState extends State<CartScreen> {
     _razorpay.on(Razorpay.EVENT_PAYMENT_SUCCESS, _handlePaymentSuccess);
     _razorpay.on(Razorpay.EVENT_PAYMENT_ERROR, _handlePaymentError);
     _razorpay.on(Razorpay.EVENT_EXTERNAL_WALLET, _handleExternalWallet);
+    _loadWalletData();
+  }
+
+  void _loadWalletData() async {
+    final wallet = await ApiService.getWallet();
+    final rewards = await ApiService.getRewards();
+    setState(() {
+      _wallet = wallet;
+      _rewards = rewards;
+    });
   }
 
   @override
@@ -118,7 +132,33 @@ class _CartScreenState extends State<CartScreen> {
 
       _currentOrder = order;
 
-      if (_selectedPaymentMethod == 'razorpay') {
+      if (_selectedPaymentMethod == 'wallet') {
+        // Pay with wallet
+        final result = await ApiService.payWithWallet(order.id);
+        if (result != null && result['success'] == true) {
+          setState(() {
+            _isProcessing = false;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(result['message'] ?? "Payment successful!"),
+              backgroundColor: const Color(0xFF10B981),
+            ),
+          );
+          widget.onOrderPlaced();
+          Navigator.pop(context);
+        } else {
+          setState(() {
+            _isProcessing = false;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Payment failed. Insufficient balance?"),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      } else if (_selectedPaymentMethod == 'razorpay') {
         // Create Razorpay order
         final razorpayOrder = await ApiService.createRazorpayOrder(order.id);
         if (razorpayOrder == null) {
@@ -171,13 +211,30 @@ class _CartScreenState extends State<CartScreen> {
     }
   }
 
+  double _calculateTotal() {
+    double subtotal = widget.cartItems.fold<double>(0, (sum, item) => sum + (item["qty"] * (item["price"] as double)));
+    
+    // Apply discounts from rewards
+    if (_rewards != null && _rewards!['discounts'] != null) {
+      double maxDiscount = 0;
+      for (var discount in _rewards!['discounts']) {
+        maxDiscount = math.max(maxDiscount, (discount['discount'] as num).toDouble());
+      }
+      if (maxDiscount > 0) {
+        subtotal = subtotal * (1 - maxDiscount / 100);
+      }
+    }
+    
+    return subtotal;
+  }
+
   @override
   Widget build(BuildContext context) {
-    final total = cartItems.fold<double>(0, (sum, item) => sum + (item["qty"] * (item["price"] as double)));
+    final total = _calculateTotal();
 
     return Scaffold(
       appBar: AppBar(title: const Text("Shopping Cart")),
-      body: cartItems.isEmpty
+      body: widget.cartItems.isEmpty
           ? Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -212,9 +269,9 @@ class _CartScreenState extends State<CartScreen> {
                 Expanded(
                   child: ListView.builder(
                     padding: const EdgeInsets.symmetric(vertical: 8),
-                    itemCount: cartItems.length,
+                    itemCount: widget.cartItems.length,
                     itemBuilder: (_, i) {
-                      final item = cartItems[i];
+                      final item = widget.cartItems[i];
                       final itemTotal = (item["qty"] * item["price"] as double);
                       return Container(
                         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -318,15 +375,53 @@ class _CartScreenState extends State<CartScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
-                              "Payment Method",
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFF111827),
-                              ),
+                            Row(
+                              children: [
+                                const Text(
+                                  "Payment Method",
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF111827),
+                                  ),
+                                ),
+                                const Spacer(),
+                                if (_wallet != null)
+                                  TextButton.icon(
+                                    onPressed: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) => const WalletScreen(),
+                                        ),
+                                      ).then((_) => _loadWalletData());
+                                    },
+                                    icon: const Icon(Icons.account_balance_wallet, size: 16),
+                                    label: Text(
+                                      "₹${(_wallet!['balance'] ?? 0.0).toStringAsFixed(2)}",
+                                      style: const TextStyle(fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                              ],
                             ),
                             const SizedBox(height: 12),
+                            RadioListTile<String>(
+                              value: 'wallet',
+                              groupValue: _selectedPaymentMethod,
+                              onChanged: _isProcessing
+                                  ? null
+                                  : (value) {
+                                      setState(() {
+                                        _selectedPaymentMethod = value!;
+                                      });
+                                    },
+                              title: const Text("Wallet"),
+                              subtitle: _wallet != null
+                                  ? Text("Balance: ₹${(_wallet!['balance'] ?? 0.0).toStringAsFixed(2)}")
+                                  : const Text("Digital wallet payment"),
+                              activeColor: const Color(0xFF10B981),
+                              contentPadding: EdgeInsets.zero,
+                            ),
                             RadioListTile<String>(
                               value: 'razorpay',
                               groupValue: _selectedPaymentMethod,
