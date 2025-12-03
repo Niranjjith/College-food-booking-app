@@ -14,6 +14,7 @@ import recommendationRoutes from "./routes/recommendations.routes.js";
 import walletRoutes from "./routes/wallet.routes.js";
 import qrRoutes from "./routes/qr.routes.js";
 import subscriptionRoutes from "./routes/subscription.routes.js";
+import feedbackRoutes from "./routes/feedback.routes.js";
 
 dotenv.config();
 connectDB();
@@ -41,6 +42,7 @@ app.use("/api/recommendations", recommendationRoutes);
 app.use("/api/wallet", walletRoutes);
 app.use("/api/qr", qrRoutes);
 app.use("/api/subscriptions", subscriptionRoutes);
+app.use("/api/feedback", feedbackRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));

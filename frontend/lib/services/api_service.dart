@@ -347,4 +347,30 @@ class ApiService {
     );
     return res.statusCode == 200;
   }
+
+  // ===== Feedback =====
+  static Future<bool> createFeedback(Map<String, dynamic> data) async {
+    final token = await _getToken();
+    final res = await http.post(
+      Uri.parse("$baseUrl/feedback"),
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer $token",
+      },
+      body: jsonEncode(data),
+    );
+    return res.statusCode == 201;
+  }
+
+  static Future<List<dynamic>> getMyFeedback() async {
+    final token = await _getToken();
+    final res = await http.get(
+      Uri.parse("$baseUrl/feedback/me"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+    if (res.statusCode == 200) {
+      return jsonDecode(res.body) as List;
+    }
+    return [];
+  }
 }

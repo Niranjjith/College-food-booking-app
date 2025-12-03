@@ -88,7 +88,7 @@ export const adminDailyOrders = catchAsync(async (req, res) => {
   const end = new Date(date); end.setHours(23, 59, 59, 999);
 
   const orders = await Order.find({ createdAt: { $gte: start, $lte: end } })
-    .populate("user", "name email")
+    .populate("user", "name email registrationNumber studentId")
     .sort({ createdAt: -1 });
 
   const total = orders.reduce((sum, o) => sum + o.subtotal, 0);

@@ -3,6 +3,7 @@ import '../services/api_service.dart';
 import '../models/user.dart';
 import 'login_screen.dart';
 import 'subscription_screen.dart';
+import 'feedback_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});

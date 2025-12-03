@@ -13,6 +13,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final nameCtrl = TextEditingController();
   final emailCtrl = TextEditingController();
   final passCtrl = TextEditingController();
+  final regNumCtrl = TextEditingController();
+  final studentIdCtrl = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool loading = false;
   bool obscurePassword = true;
@@ -30,6 +32,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
       nameCtrl.text,
       emailCtrl.text,
       passCtrl.text,
+      registrationNumber: regNumCtrl.text.isNotEmpty ? regNumCtrl.text : null,
+      studentId: studentIdCtrl.text.isNotEmpty ? studentIdCtrl.text : null,
     );
 
     setState(() {
