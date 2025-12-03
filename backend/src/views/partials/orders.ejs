@@ -1,0 +1,50 @@
+<%- include('partials/header') %>
+<h3>Orders for <%= date %></h3>
+
+<form class="row g-3 mb-3" method="get" action="/admin/orders">
+  <div class="col-auto">
+    <input class="form-control" type="date" name="date" value="<%= date %>"/>
+  </div>
+  <div class="col-auto">
+    <button class="btn btn-secondary">Filter</button>
+  </div>
+</form>
+
+<div class="card">
+  <div class="card-body">
+    <p><strong>Total orders:</strong> <%= orders.length %> |
+       <strong>Total amount:</strong> ₹<%= total.toFixed(2) %></p>
+    <div class="table-responsive">
+      <table class="table table-striped align-middle">
+        <thead>
+          <tr>
+            <th>#</th><th>User</th><th>Items</th><th>Subtotal</th><th>Status</th><th>Created</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% orders.forEach((o, idx) => { %>
+            <tr>
+              <td><%= idx+1 %></td>
+              <td><%= o.user?.name %> <small class="text-muted">(<%= o.user?.email %>)</small></td>
+              <td>
+                <ul class="mb-0">
+                  <% o.items.forEach(it => { %>
+                    <li><%= it.name %> × <%= it.qty %> — ₹<%= (it.price * it.qty).toFixed(2) %></li>
+                  <% }) %>
+                </ul>
+              </td>
+              <td>₹<%= o.subtotal.toFixed(2) %></td>
+              <td>
+                <span class="badge <%= o.status==='paid' ? 'bg-success' : (o.status==='pending' ? 'bg-warning' : 'bg-secondary') %>">
+                  <%= o.status %>
+                </span>
+              </td>
+              <td><%= new Date(o.createdAt).toLocaleString() %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<%- include('partials/footer') %>

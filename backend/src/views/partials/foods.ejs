@@ -1,0 +1,30 @@
+<%- include('partials/header') %>
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h3>Foods</h3>
+  <a class="btn btn-primary" href="/admin/foods/new">Add Food</a>
+</div>
+
+<div class="table-responsive card">
+  <table class="table table-striped align-middle mb-0">
+    <thead>
+      <tr><th>Name</th><th>Category</th><th>Price</th><th>Available</th><th>Actions</th></tr>
+    </thead>
+    <tbody>
+      <% foods.forEach(f => { %>
+        <tr>
+          <td><%= f.name %></td>
+          <td><%= f.category %></td>
+          <td>₹<%= f.price.toFixed(2) %></td>
+          <td><%= f.isAvailable ? 'Yes' : 'No' %></td>
+          <td>
+            <a class="btn btn-sm btn-outline-secondary" href="/admin/foods/<%= f._id %>/edit">Edit</a>
+            <form class="d-inline" method="post" action="/admin/foods/<%= f._id %>/delete">
+              <button class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete?')">Delete</button>
+            </form>
+          </td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>
+<%- include('partials/footer') %>
