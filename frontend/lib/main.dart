@@ -24,14 +24,13 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF10B981),
+          seedColor: const Color(0xFF0B8F6B),
           brightness: Brightness.light,
-          primary: const Color(0xFF10B981),
-          secondary: const Color(0xFF059669),
+          primary: const Color(0xFF0B8F6B),
+          secondary: const Color(0xFFF97316),
           surface: Colors.white,
-          background: const Color(0xFFF9FAFB),
         ),
-        scaffoldBackgroundColor: const Color(0xFFF9FAFB),
+        scaffoldBackgroundColor: const Color(0xFFF4F1EA),
         appBarTheme: const AppBarTheme(
           elevation: 0,
           centerTitle: true,

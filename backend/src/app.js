@@ -1,5 +1,5 @@
+import "./config/env.js";
 import express from "express";
-import dotenv from "dotenv";
 import cors from "cors";
 import morgan from "morgan";
 import { connectDB } from "./config/db.js";
@@ -20,7 +20,6 @@ import crowdRoutes from "./routes/crowd.routes.js";
 import chatbotRoutes from "./routes/chatbot.routes.js";
 import eventRoutes from "./routes/event.routes.js";
 
-dotenv.config();
 connectDB();
 
 const app = express();
@@ -53,4 +52,10 @@ app.use("/api/chatbot", chatbotRoutes);
 app.use("/api/events", eventRoutes);
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
+app.listen(PORT, () => {
+  const razorpayReady = Boolean(
+    process.env.RAZORPAY_KEY_ID?.trim() && process.env.RAZORPAY_KEY_SECRET?.trim()
+  );
+  console.log(`✅ Server running on port ${PORT}`);
+  console.log(razorpayReady ? "Razorpay: configured" : "Razorpay: missing RAZORPAY_KEY_ID/SECRET");
+});

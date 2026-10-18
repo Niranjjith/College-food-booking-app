@@ -136,6 +136,18 @@ class ApiService {
     return [];
   }
 
+  static Future<Order?> getOrder(String orderId) async {
+    final token = await _getToken();
+    final res = await http.get(
+      Uri.parse("$baseUrl/orders/$orderId"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+    if (res.statusCode == 200) {
+      return Order.fromJson(jsonDecode(res.body));
+    }
+    return null;
+  }
+
   // ===== Payments =====
   static Future<Map<String, dynamic>?> createRazorpayOrder(String orderId) async {
     final token = await _getToken();

@@ -112,7 +112,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                   ),
                   const SizedBox(height: 32),
                   const Text(
-                    "Food Booking",
+                    "Campus Kitchen",
                     style: TextStyle(
                       fontSize: 36,
                       fontWeight: FontWeight.bold,
@@ -139,7 +139,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                   ),
                   const SizedBox(height: 8),
                   const Text(
-                    "Order your favorite meals with ease",
+                    "Food booking dashboard",
                     style: TextStyle(
                       fontSize: 16,
                       color: Colors.white70,

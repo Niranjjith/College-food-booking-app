@@ -5,6 +5,8 @@ import {
   stripeWebhook,
   createRazorpayOrder,
   verifyRazorpayPayment,
+  razorpayCheckoutPage,
+  verifyRazorpayHostedPayment,
 } from '../controllers/payments.controller.js';
 
 const router = Router();
@@ -15,6 +17,8 @@ router.post('/intent', protect, createPaymentIntent);
 // Razorpay routes
 router.post('/razorpay/create-order', protect, createRazorpayOrder);
 router.post('/razorpay/verify', protect, verifyRazorpayPayment);
+router.get('/razorpay/checkout', razorpayCheckoutPage);
+router.post('/razorpay/verify-hosted', verifyRazorpayHostedPayment);
 
 // webhook must read the raw body
 export const webhookRoute = Router();

@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 import '../services/api_service.dart';
 import '../services/offline_service.dart';
+import '../services/razorpay_hosted_checkout.dart';
 import '../models/order.dart';
+import '../utils/payment_platform.dart';
 import 'wallet_screen.dart';
 
 class CartScreen extends StatefulWidget {
@@ -17,7 +19,7 @@ class CartScreen extends StatefulWidget {
 }
 
 class _CartScreenState extends State<CartScreen> {
-  late Razorpay _razorpay;
+  Razorpay? _razorpay;
   String _selectedPaymentMethod = 'razorpay';
   bool _isProcessing = false;
   Order? _currentOrder;
@@ -27,10 +29,12 @@ class _CartScreenState extends State<CartScreen> {
   @override
   void initState() {
     super.initState();
-    _razorpay = Razorpay();
-    _razorpay.on(Razorpay.EVENT_PAYMENT_SUCCESS, _handlePaymentSuccess);
-    _razorpay.on(Razorpay.EVENT_PAYMENT_ERROR, _handlePaymentError);
-    _razorpay.on(Razorpay.EVENT_EXTERNAL_WALLET, _handleExternalWallet);
+    if (razorpayNativeCheckoutSupported) {
+      _razorpay = Razorpay();
+      _razorpay!.on(Razorpay.EVENT_PAYMENT_SUCCESS, _handlePaymentSuccess);
+      _razorpay!.on(Razorpay.EVENT_PAYMENT_ERROR, _handlePaymentError);
+      _razorpay!.on(Razorpay.EVENT_EXTERNAL_WALLET, _handleExternalWallet);
+    }
     _loadWalletData();
   }
 
@@ -45,7 +49,7 @@ class _CartScreenState extends State<CartScreen> {
 
   @override
   void dispose() {
-    _razorpay.clear();
+    _razorpay?.clear();
     super.dispose();
   }
 
@@ -201,22 +205,67 @@ class _CartScreenState extends State<CartScreen> {
           return;
         }
 
-        // Open Razorpay checkout
-        final options = {
-          'key': razorpayOrder['key'],
-          'amount': razorpayOrder['amount'],
-          'name': 'Food Booking App',
-          'description': 'Order Payment',
-          'prefill': {
-            'contact': '',
-            'email': '',
-          },
-          'external': {
-            'wallets': ['paytm']
-          }
-        };
+        if (razorpayNativeCheckoutSupported) {
+          final options = {
+            'key': razorpayOrder['key'],
+            'amount': razorpayOrder['amount'],
+            'name': 'Food Booking App',
+            'description': 'Order Payment',
+            'order_id': razorpayOrder['id'],
+            'prefill': {
+              'contact': '',
+              'email': '',
+            },
+            'external': {
+              'wallets': ['paytm']
+            }
+          };
 
-        _razorpay.open(options);
+          _razorpay!.open(options);
+        } else {
+          final checkoutUrl = razorpayOrder['checkoutUrl'] as String?;
+          if (checkoutUrl == null || checkoutUrl.isEmpty) {
+            setState(() {
+              _isProcessing = false;
+            });
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text("❌ Failed to initialize payment")),
+              );
+            }
+            return;
+          }
+
+          final paid = await completeRazorpayHostedCheckout(
+            context,
+            appOrderId: order.id,
+            checkoutUrl: checkoutUrl,
+          );
+
+          setState(() {
+            _isProcessing = false;
+          });
+
+          if (!mounted) return;
+
+          if (paid) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text("✅ Payment successful! Order placed."),
+                backgroundColor: Color(0xFF10B981),
+              ),
+            );
+            widget.onOrderPlaced();
+            Navigator.pop(context);
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text("Payment not completed"),
+                backgroundColor: Colors.orange,
+              ),
+            );
+          }
+        }
       } else {
         // Cash on delivery or other payment methods
         setState(() {
@@ -463,7 +512,11 @@ class _CartScreenState extends State<CartScreen> {
                                       });
                                     },
                               title: const Text("Razorpay"),
-                              subtitle: const Text("Pay with UPI, Cards, Wallets"),
+                              subtitle: Text(
+                                razorpayNativeCheckoutSupported
+                                    ? "Pay with UPI, Cards, Wallets"
+                                    : "Opens secure checkout in your browser",
+                              ),
                               activeColor: const Color(0xFF10B981),
                               contentPadding: EdgeInsets.zero,
                             ),

@@ -1,13 +1,9 @@
 import 'package:flutter/material.dart';
+import '../theme/app_colors.dart';
 import 'foods_screen.dart';
 import 'orders_screen.dart';
 import 'profile_screen.dart';
 import 'wallet_screen.dart';
-import 'subscription_screen.dart';
-import 'nutrition_screen.dart';
-import 'voice_order_screen.dart';
-import 'chatbot_screen.dart';
-import 'events_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -19,67 +15,46 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int index = 0;
 
-  final screens = [
-    const FoodsScreen(),
-    const OrdersScreen(),
-    const WalletScreen(),
-    const ProfileScreen(),
+  final screens = const [
+    FoodsScreen(),
+    OrdersScreen(),
+    WalletScreen(),
+    ProfileScreen(),
   ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: screens[index],
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, -2),
-            ),
-          ],
-        ),
-        child: BottomNavigationBar(
-          currentIndex: index,
-          onTap: (i) => setState(() => index = i),
-          elevation: 0,
-          backgroundColor: Colors.transparent,
-          selectedItemColor: const Color(0xFF10B981),
-          unselectedItemColor: const Color(0xFF9CA3AF),
-          selectedLabelStyle: const TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: 12,
+      backgroundColor: AppColors.background,
+      body: IndexedStack(index: index, children: screens),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: index,
+        onDestinationSelected: (i) => setState(() => index = i),
+        backgroundColor: Colors.white,
+        indicatorColor: AppColors.primary.withValues(alpha: 0.14),
+        height: 72,
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.dashboard_outlined),
+            selectedIcon: Icon(Icons.dashboard_rounded, color: AppColors.primary),
+            label: "Dashboard",
           ),
-          unselectedLabelStyle: const TextStyle(
-            fontWeight: FontWeight.w500,
-            fontSize: 12,
+          NavigationDestination(
+            icon: Icon(Icons.receipt_long_outlined),
+            selectedIcon: Icon(Icons.receipt_long, color: AppColors.primary),
+            label: "Orders",
           ),
-          type: BottomNavigationBarType.fixed,
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.restaurant_menu),
-              activeIcon: Icon(Icons.restaurant_menu),
-              label: "Foods",
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.receipt_long),
-              activeIcon: Icon(Icons.receipt_long),
-              label: "Orders",
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.account_balance_wallet),
-              activeIcon: Icon(Icons.account_balance_wallet),
-              label: "Wallet",
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.person_outline),
-              activeIcon: Icon(Icons.person),
-              label: "Profile",
-            ),
-          ],
-        ),
+          NavigationDestination(
+            icon: Icon(Icons.account_balance_wallet_outlined),
+            selectedIcon: Icon(Icons.account_balance_wallet, color: AppColors.primary),
+            label: "Wallet",
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.person_outline),
+            selectedIcon: Icon(Icons.person, color: AppColors.primary),
+            label: "Profile",
+          ),
+        ],
       ),
     );
   }
