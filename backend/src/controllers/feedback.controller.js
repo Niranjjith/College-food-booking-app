@@ -64,7 +64,7 @@ export const updateFeedbackStatus = catchAsync(async (req, res) => {
   }
 
   feedback.status = status;
-  if (adminResponse) feedback.adminResponse = adminResponse;
+  if (Object.prototype.hasOwnProperty.call(req.body, 'adminResponse')) feedback.adminResponse = adminResponse;
   if (status === 'resolved') feedback.resolvedAt = new Date();
 
   await feedback.save();

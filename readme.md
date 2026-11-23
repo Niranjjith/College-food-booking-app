@@ -14,7 +14,8 @@ A **full-stack food ordering system** with premium UI/UX, featuring a Flutter mo
 - 🍔 **Food Menu** - Browse available food items with categories
 - 🛒 **Shopping Cart** - Add items, manage quantities, view totals
 - 💳 **Payment Integration** - Razorpay payment gateway with Cash on Delivery option
-- 📦 **Order History** - View past orders with status tracking
+- 📦 **Order Tracking** - Follow live preparation status, estimated time, and pickup readiness
+- ❤️ **Saved Favorites** - Save favorite dishes and filter the menu to find them quickly
 - 👤 **Profile Management** - Update email and password
 - 🎨 **Premium UI** - Modern Material Design 3 with smooth animations
 
@@ -23,6 +24,9 @@ A **full-stack food ordering system** with premium UI/UX, featuring a Flutter mo
 - 🔮 **Demand Forecasting** - Predictive analytics for inventory planning
 - 🍲 **Food Management** - Add, edit, delete, and manage food items
 - 📋 **Order Management** - View daily orders, mark as paid, track status
+- 👩‍🍳 **Live Kitchen Queue** - Monitor waiting, preparing, and pickup-ready orders
+- 📦 **Inventory Management** - Track stock levels, low-stock alerts, and restocking
+- 💬 **Feedback Inbox** - Review student feedback and send replies or status updates
 - 📈 **Sales Trends** - 7-day revenue trends and patterns
 - ⏰ **Peak Hours Analysis** - Identify busiest hours and days
 - 🎨 **Premium Design** - Modern UI with Tailwind CSS and gradient cards
@@ -182,7 +186,24 @@ npm install
 npm start
 ```
 
-The admin dashboard will open at `http://localhost:3000`
+The admin dashboard will open at `http://localhost:3000/admin/`.
+
+Sign in with the administrator account configured in the backend `.env`. The
+dashboard uses the same JWT authentication and MongoDB-backed food and order
+APIs as the Flutter app. Menu changes are reflected in the student app, and
+order status updates are shared with the customer order-tracking flow. The
+kitchen queue refreshes automatically, while inventory and feedback changes
+are saved through the existing admin-protected backend APIs.
+
+To serve the built dashboard from the backend instead, build it first:
+
+```bash
+cd admin
+npm run build
+```
+
+Then start the backend and open `http://localhost:5000/admin`. The dashboard
+requires the backend and MongoDB to be running.
 
 ---
 
@@ -267,6 +288,28 @@ flutter run -d ios             # iOS simulator (Mac only)
 - `GET /api/orders/admin/sales-trend` - Get sales trends (Admin)
 - `GET /api/orders/admin/demand-forecast` - Demand forecasting (Admin)
 - `PATCH /api/orders/:id/mark-paid` - Mark order as paid (Admin)
+- `GET /api/queue/order/:id/status` - Get live order status and preparation estimate
+- `GET /api/queue/admin/queue` - Get active kitchen orders (Admin)
+- `PATCH /api/queue/order/:id/status` - Advance an order through preparation and pickup (Admin)
+
+### Favorites
+- `GET /api/recommendations/favorites` - Get the signed-in user's favorite foods
+- `PUT /api/recommendations/favorites/:foodId` - Save or remove a favorite with `{ "isFavorite": true|false }`
+
+### Inventory (Admin)
+- `GET /api/inventory` - List inventory items
+- `GET /api/inventory/alerts` - Get low-stock alerts
+- `POST /api/inventory` - Add an inventory item
+- `PUT /api/inventory/:id` - Update an inventory item
+- `PATCH /api/inventory/:id/restock` - Add stock with `{ "quantity": number }`
+- `DELETE /api/inventory/:id` - Remove an inventory item
+
+### Feedback
+- `POST /api/feedback` - Submit student feedback
+- `GET /api/feedback/me` - Get the signed-in user's feedback
+- `GET /api/feedback/admin/all` - List feedback (Admin)
+- `GET /api/feedback/admin/stats` - Get feedback counts (Admin)
+- `PATCH /api/feedback/admin/:id` - Update feedback status and admin response (Admin)
 
 ### Payments
 - `POST /api/payments/razorpay/create-order` - Create Razorpay order
@@ -448,6 +491,9 @@ For support, email support@example.com or create an issue in the repository.
 - Analytics dashboard with charts
 - Food management interface
 - Order management system
+- Live kitchen queue and pickup progression
+- Inventory stock levels and low-stock alerts
+- Student feedback inbox and response tools
 - Demand forecasting analytics
 
 ![Admin Dashboard](Screenshot/Admin%20page.png)

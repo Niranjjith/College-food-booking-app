@@ -202,6 +202,36 @@ class ApiService {
   }
 
   // ===== Recommendations =====
+  static Future<Set<String>> getFavoriteFoodIds() async {
+    final token = await _getToken();
+    final res = await http.get(
+      Uri.parse("$baseUrl/recommendations/favorites"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+    if (res.statusCode != 200) {
+      throw Exception("Could not load saved meals (${res.statusCode}).");
+    }
+    final data = jsonDecode(res.body) as Map<String, dynamic>;
+    return Set<String>.from(data['favoriteFoods'] as List);
+  }
+
+  static Future<Set<String>> setFavoriteFood(String foodId, bool isFavorite) async {
+    final token = await _getToken();
+    final res = await http.put(
+      Uri.parse("$baseUrl/recommendations/favorites/$foodId"),
+      headers: {
+        "Authorization": "Bearer $token",
+        "Content-Type": "application/json",
+      },
+      body: jsonEncode({"isFavorite": isFavorite}),
+    );
+    if (res.statusCode != 200) {
+      throw Exception("Could not update saved meals (${res.statusCode}).");
+    }
+    final data = jsonDecode(res.body) as Map<String, dynamic>;
+    return Set<String>.from(data['favoriteFoods'] as List);
+  }
+
   static Future<List<dynamic>> getRecommendations() async {
     final token = await _getToken();
     final res = await http.get(

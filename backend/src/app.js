@@ -2,6 +2,8 @@ import "./config/env.js";
 import express from "express";
 import cors from "cors";
 import morgan from "morgan";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { connectDB } from "./config/db.js";
 
 import authRoutes from "./routes/auth.routes.js";
@@ -23,6 +25,7 @@ import eventRoutes from "./routes/event.routes.js";
 connectDB();
 
 const app = express();
+const adminDistPath = fileURLToPath(new URL("../../admin/dist", import.meta.url));
 
 app.use(cors({ origin: "*", credentials: true }));
 app.use(express.json());
@@ -50,6 +53,11 @@ app.use("/api/prioritization", prioritizationRoutes);
 app.use("/api/crowd", crowdRoutes);
 app.use("/api/chatbot", chatbotRoutes);
 app.use("/api/events", eventRoutes);
+
+app.use("/admin", express.static(adminDistPath));
+app.get("/admin/*", (_req, res) => {
+  res.sendFile(path.join(adminDistPath, "index.html"));
+});
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

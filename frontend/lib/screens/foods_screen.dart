@@ -22,8 +22,12 @@ class _FoodsScreenState extends State<FoodsScreen> {
   List<Food> foods = [];
   List<Food> recommendations = [];
   List<Food> trending = [];
+  Set<String> favoriteIds = {};
+  final Set<String> _updatingFavoriteIds = {};
   List<Map<String, dynamic>> cart = [];
   bool loading = true;
+  bool favoritesOnly = false;
+  String? favoriteError;
   String? userName;
   String greeting = "Good morning";
   String query = "";
@@ -63,6 +67,7 @@ class _FoodsScreenState extends State<FoodsScreen> {
       _loadFoods(),
       _loadRecommendations(),
       _loadTrending(),
+      _loadFavorites(),
       _loadStats(),
     ]);
     if (mounted) setState(() => loading = false);
@@ -112,6 +117,20 @@ class _FoodsScreenState extends State<FoodsScreen> {
     } catch (_) {}
   }
 
+  Future<void> _loadFavorites() async {
+    try {
+      final ids = await ApiService.getFavoriteFoodIds();
+      if (!mounted) return;
+      setState(() {
+        favoriteIds = ids;
+        favoriteError = null;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => favoriteError = "Saved meals couldn't be synced. $error");
+    }
+  }
+
   Future<void> _loadStats() async {
     try {
       final wallet = await ApiService.getWallet();
@@ -137,12 +156,13 @@ class _FoodsScreenState extends State<FoodsScreen> {
   List<Food> get filteredFoods {
     return foods.where((food) {
       final matchesCategory = selectedCategory == "All" || food.category == selectedCategory;
+      final matchesFavorites = !favoritesOnly || favoriteIds.contains(food.id);
       final q = query.trim().toLowerCase();
       final matchesQuery = q.isEmpty ||
           food.name.toLowerCase().contains(q) ||
           food.category.toLowerCase().contains(q) ||
           food.description.toLowerCase().contains(q);
-      return matchesCategory && matchesQuery;
+      return matchesCategory && matchesFavorites && matchesQuery;
     }).toList();
   }
 
@@ -160,6 +180,7 @@ class _FoodsScreenState extends State<FoodsScreen> {
       );
 
   void _addToCart(Food food) {
+    if (!food.isAvailable) return;
     setState(() {
       final index = cart.indexWhere((item) => item["foodId"] == food.id);
       if (index >= 0) {
@@ -177,6 +198,24 @@ class _FoodsScreenState extends State<FoodsScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
+  }
+
+  Future<void> _toggleFavorite(Food food) async {
+    if (_updatingFavoriteIds.contains(food.id)) return;
+    final save = !favoriteIds.contains(food.id);
+    setState(() {
+      _updatingFavoriteIds.add(food.id);
+      favoriteError = null;
+    });
+
+    try {
+      final ids = await ApiService.setFavoriteFood(food.id, save);
+      if (mounted) setState(() => favoriteIds = ids);
+    } catch (error) {
+      if (mounted) setState(() => favoriteError = "Couldn't update saved meals. $error");
+    } finally {
+      if (mounted) setState(() => _updatingFavoriteIds.remove(food.id));
+    }
   }
 
   void _goToCart() {
@@ -325,36 +364,52 @@ class _FoodsScreenState extends State<FoodsScreen> {
                   ),
                 ),
               ),
-              if (categories.length > 1)
+              SliverToBoxAdapter(
+                child: SizedBox(
+                  height: 52,
+                  child: ListView.separated(
+                    padding: EdgeInsets.fromLTRB(horizontal, 16, horizontal, 0),
+                    scrollDirection: Axis.horizontal,
+                    itemCount: categories.length + 1,
+                    separatorBuilder: (_, __) => const SizedBox(width: 8),
+                    itemBuilder: (_, i) {
+                      final isFavoritesChip = i == 0;
+                      final category = isFavoritesChip ? "Favorites" : categories[i - 1];
+                      final selected = isFavoritesChip ? favoritesOnly : !favoritesOnly && category == selectedCategory;
+                      return ChoiceChip(
+                        avatar: isFavoritesChip
+                            ? Icon(Icons.favorite, size: 15, color: selected ? Colors.white : Colors.red.shade300)
+                            : null,
+                        label: Text(isFavoritesChip ? "Favorites (${favoriteIds.length})" : category),
+                        selected: selected,
+                        onSelected: (_) => setState(() {
+                          favoritesOnly = isFavoritesChip;
+                          if (!isFavoritesChip) selectedCategory = category;
+                        }),
+                        selectedColor: AppColors.primary,
+                        labelStyle: TextStyle(
+                          color: selected ? Colors.white : AppColors.ink,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        backgroundColor: Colors.white,
+                        side: BorderSide.none,
+                        showCheckmark: false,
+                      );
+                    },
+                  ),
+                ),
+              ),
+              if (favoriteError != null)
                 SliverToBoxAdapter(
-                  child: SizedBox(
-                    height: 52,
-                    child: ListView.separated(
-                      padding: EdgeInsets.fromLTRB(horizontal, 16, horizontal, 0),
-                      scrollDirection: Axis.horizontal,
-                      itemCount: categories.length,
-                      separatorBuilder: (_, __) => const SizedBox(width: 8),
-                      itemBuilder: (_, i) {
-                        final category = categories[i];
-                        final selected = category == selectedCategory;
-                        return ChoiceChip(
-                          label: Text(category),
-                          selected: selected,
-                          onSelected: (_) => setState(() => selectedCategory = category),
-                          selectedColor: AppColors.primary,
-                          labelStyle: TextStyle(
-                            color: selected ? Colors.white : AppColors.ink,
-                            fontWeight: FontWeight.w600,
-                          ),
-                          backgroundColor: Colors.white,
-                          side: BorderSide.none,
-                          showCheckmark: false,
-                        );
-                      },
+                  child: Padding(
+                    padding: EdgeInsets.fromLTRB(horizontal, 8, horizontal, 0),
+                    child: Text(
+                      favoriteError!,
+                      style: TextStyle(color: Colors.red.shade700, fontSize: 12),
                     ),
                   ),
                 ),
-              if (featured.isNotEmpty && query.isEmpty && selectedCategory == "All")
+              if (featured.isNotEmpty && query.isEmpty && selectedCategory == "All" && !favoritesOnly)
                 SliverToBoxAdapter(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -379,7 +434,14 @@ class _FoodsScreenState extends State<FoodsScreen> {
                           separatorBuilder: (_, __) => const SizedBox(width: 12),
                           itemBuilder: (_, i) {
                             final food = featured[i];
-                            return FeaturedFoodCard(food: food, onAdd: () => _addToCart(food));
+                            return FeaturedFoodCard(
+                              food: food,
+                              onAdd: () => _addToCart(food),
+                              isFavorite: favoriteIds.contains(food.id),
+                              onFavoriteToggle: _updatingFavoriteIds.contains(food.id)
+                                  ? null
+                                  : () => _toggleFavorite(food),
+                            );
                           },
                         ),
                       ),
@@ -396,16 +458,18 @@ class _FoodsScreenState extends State<FoodsScreen> {
                         ),
                       )
                     : filteredFoods.isEmpty
-                        ? const SliverToBoxAdapter(
+                        ? SliverToBoxAdapter(
                             child: Padding(
-                              padding: EdgeInsets.only(top: 48),
+                              padding: const EdgeInsets.only(top: 48),
                               child: Column(
                                 children: [
-                                  Icon(Icons.ramen_dining_outlined, size: 56, color: AppColors.muted),
-                                  SizedBox(height: 12),
+                                  const Icon(Icons.ramen_dining_outlined, size: 56, color: AppColors.muted),
+                                  const SizedBox(height: 12),
                                   Text(
-                                    "No dishes match that search",
-                                    style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink),
+                                    favoritesOnly
+                                        ? "No saved meals yet"
+                                        : "No dishes match that search",
+                                    style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink),
                                   ),
                                 ],
                               ),
@@ -426,7 +490,14 @@ class _FoodsScreenState extends State<FoodsScreen> {
                                 );
                               }
                               final food = filteredFoods[i - 1];
-                              return FoodCard(food: food, onAdd: () => _addToCart(food));
+                              return FoodCard(
+                                food: food,
+                                onAdd: () => _addToCart(food),
+                                isFavorite: favoriteIds.contains(food.id),
+                                onFavoriteToggle: _updatingFavoriteIds.contains(food.id)
+                                    ? null
+                                    : () => _toggleFavorite(food),
+                              );
                             },
                           ),
               ),

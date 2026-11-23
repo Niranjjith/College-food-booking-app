@@ -5,8 +5,16 @@ import '../theme/app_colors.dart';
 class FoodCard extends StatelessWidget {
   final Food food;
   final VoidCallback onAdd;
+  final bool isFavorite;
+  final VoidCallback? onFavoriteToggle;
 
-  const FoodCard({super.key, required this.food, required this.onAdd});
+  const FoodCard({
+    super.key,
+    required this.food,
+    required this.onAdd,
+    this.isFavorite = false,
+    this.onFavoriteToggle,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -26,12 +34,36 @@ class FoodCard extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(18),
-          onTap: onAdd,
+          onTap: food.isAvailable ? onAdd : null,
           child: Padding(
             padding: const EdgeInsets.all(14),
             child: Row(
               children: [
-                _FoodThumb(food: food, size: 78),
+                Stack(
+                  children: [
+                    _FoodThumb(food: food, size: 78),
+                    if (onFavoriteToggle != null)
+                      Positioned(
+                        top: -7,
+                        right: -7,
+                        child: IconButton(
+                          onPressed: onFavoriteToggle,
+                          tooltip: isFavorite ? "Remove from saved meals" : "Save meal",
+                          icon: Icon(
+                            isFavorite ? Icons.favorite : Icons.favorite_border,
+                            color: isFavorite ? Colors.red.shade400 : AppColors.muted,
+                            size: 18,
+                          ),
+                          style: IconButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            minimumSize: const Size(32, 32),
+                            maximumSize: const Size(32, 32),
+                            padding: EdgeInsets.zero,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
                 const SizedBox(width: 14),
                 Expanded(
                   child: Column(
@@ -77,13 +109,18 @@ class FoodCard extends StatelessWidget {
                               color: AppColors.primary,
                               icon: Icons.eco,
                             ),
+                          if (!food.isAvailable)
+                            const _ChipLabel(
+                              text: "Sold out",
+                              color: AppColors.muted,
+                            ),
                         ],
                       ),
                     ],
                   ),
                 ),
                 const SizedBox(width: 8),
-                _AddButton(onAdd: onAdd),
+                _AddButton(onAdd: onAdd, enabled: food.isAvailable),
               ],
             ),
           ),
@@ -96,8 +133,16 @@ class FoodCard extends StatelessWidget {
 class FeaturedFoodCard extends StatelessWidget {
   final Food food;
   final VoidCallback onAdd;
+  final bool isFavorite;
+  final VoidCallback? onFavoriteToggle;
 
-  const FeaturedFoodCard({super.key, required this.food, required this.onAdd});
+  const FeaturedFoodCard({
+    super.key,
+    required this.food,
+    required this.onAdd,
+    this.isFavorite = false,
+    this.onFavoriteToggle,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -119,15 +164,55 @@ class FeaturedFoodCard extends StatelessWidget {
         children: [
           ClipRRect(
             borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-            child: SizedBox(
-              height: 108,
-              width: double.infinity,
-              child: food.imageUrl.isNotEmpty
-                  ? Image.network(food.imageUrl, fit: BoxFit.cover)
-                  : Container(
-                      color: AppColors.primary.withValues(alpha: 0.12),
-                      child: const Icon(Icons.restaurant, color: AppColors.primary, size: 40),
+            child: Stack(
+              children: [
+                SizedBox(
+                  height: 108,
+                  width: double.infinity,
+                  child: food.imageUrl.isNotEmpty
+                      ? Image.network(food.imageUrl, fit: BoxFit.cover)
+                      : Container(
+                          color: AppColors.primary.withValues(alpha: 0.12),
+                          child: const Icon(Icons.restaurant, color: AppColors.primary, size: 40),
+                        ),
+                ),
+                if (onFavoriteToggle != null)
+                  Positioned(
+                    top: 6,
+                    right: 6,
+                    child: IconButton(
+                      onPressed: onFavoriteToggle,
+                      tooltip: isFavorite ? "Remove from saved meals" : "Save meal",
+                      icon: Icon(
+                        isFavorite ? Icons.favorite : Icons.favorite_border,
+                        color: isFavorite ? Colors.red.shade400 : AppColors.muted,
+                        size: 18,
+                      ),
+                      style: IconButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        minimumSize: const Size(32, 32),
+                        maximumSize: const Size(32, 32),
+                        padding: EdgeInsets.zero,
+                      ),
                     ),
+                  ),
+                if (!food.isAvailable)
+                  Positioned(
+                    bottom: 6,
+                    left: 6,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      child: const Text(
+                        "Sold out",
+                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ),
           Padding(
@@ -156,7 +241,7 @@ class FeaturedFoodCard extends StatelessWidget {
                       ),
                     ),
                     const Spacer(),
-                    _AddButton(onAdd: onAdd, compact: true),
+                    _AddButton(onAdd: onAdd, compact: true, enabled: food.isAvailable),
                   ],
                 ),
               ],
@@ -194,10 +279,15 @@ class _FoodThumb extends StatelessWidget {
 }
 
 class _AddButton extends StatelessWidget {
-  const _AddButton({required this.onAdd, this.compact = false});
+  const _AddButton({
+    required this.onAdd,
+    this.compact = false,
+    this.enabled = true,
+  });
 
   final VoidCallback onAdd;
   final bool compact;
+  final bool enabled;
 
   @override
   Widget build(BuildContext context) {
@@ -206,12 +296,12 @@ class _AddButton extends StatelessWidget {
       width: size,
       height: size,
       child: Material(
-        color: AppColors.primary,
+        color: enabled ? AppColors.primary : AppColors.muted,
         borderRadius: BorderRadius.circular(12),
         child: InkWell(
           borderRadius: BorderRadius.circular(12),
-          onTap: onAdd,
-          child: Icon(Icons.add, color: Colors.white, size: compact ? 18 : 22),
+          onTap: enabled ? onAdd : null,
+          child: Icon(enabled ? Icons.add : Icons.block, color: Colors.white, size: compact ? 18 : 22),
         ),
       ),
     );

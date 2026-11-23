@@ -5,6 +5,7 @@ const userPreferenceSchema = new mongoose.Schema(
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, unique: true },
     dietaryRestrictions: [{ type: String, enum: ['vegetarian', 'vegan', 'gluten-free', 'dairy-free', 'nut-free', 'halal', 'kosher'] }],
     favoriteCategories: [String],
+    favoriteFoods: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Food' }],
     dislikedFoods: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Food' }],
     allergies: [String],
     preferredPriceRange: {

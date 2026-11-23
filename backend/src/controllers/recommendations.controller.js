@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import Food from '../models/Food.js';
 import Order from '../models/Order.js';
 import UserPreference from '../models/UserPreference.js';
@@ -28,7 +29,9 @@ export const getRecommendations = catchAsync(async (req, res) => {
     recommendations,
     basedOn: {
       orderHistory: userOrders.length > 0,
-      preferences: userPrefs.dietaryRestrictions.length > 0 || userPrefs.favoriteCategories.length > 0,
+      preferences: userPrefs.dietaryRestrictions.length > 0 ||
+        userPrefs.favoriteCategories.length > 0 ||
+        userPrefs.favoriteFoods.length > 0,
       trending: true,
     },
   });
@@ -38,7 +41,7 @@ export const getRecommendations = catchAsync(async (req, res) => {
  * Build recommendation algorithm
  */
 const buildRecommendations = async (userId, userPrefs, userOrders) => {
-  const allFoods = await Food.find({ isAvailable: true });
+  const allFoods = await Food.find({ available: true });
 
   // Score each food
   const scoredFoods = await Promise.all(
@@ -54,6 +57,10 @@ const buildRecommendations = async (userId, userPrefs, userOrders) => {
       // 2. Category preference (20% weight)
       if (userPrefs.favoriteCategories.includes(food.category)) {
         score += 20;
+      }
+
+      if (userPrefs.favoriteFoods.some((id) => id.toString() === food._id.toString())) {
+        score += 35;
       }
 
       // 3. Price range (15% weight)
@@ -133,6 +140,9 @@ const getRecommendationReason = (food, userPrefs, userOrders) => {
   if (orderCount > 0) {
     return `You've ordered this ${orderCount} time${orderCount > 1 ? 's' : ''} before`;
   }
+  if (userPrefs.favoriteFoods.some((id) => id.toString() === food._id.toString())) {
+    return 'Saved in your favorites';
+  }
   if (userPrefs.favoriteCategories.includes(food.category)) {
     return `Matches your favorite category: ${food.category}`;
   }
@@ -170,11 +180,48 @@ export const updatePreferences = catchAsync(async (req, res) => {
   res.json(userPrefs);
 });
 
+export const getFavoriteFoods = catchAsync(async (req, res) => {
+  const preferences = await UserPreference.findOne({ user: req.user._id }).select('favoriteFoods');
+  res.json({ favoriteFoods: (preferences?.favoriteFoods || []).map(String) });
+});
+
+export const updateFavoriteFood = catchAsync(async (req, res) => {
+  const { foodId } = req.params;
+  const { isFavorite } = req.body;
+
+  if (!mongoose.isValidObjectId(foodId)) {
+    return res.status(400).json({ message: 'Invalid food ID' });
+  }
+  if (typeof isFavorite !== 'boolean') {
+    return res.status(400).json({ message: 'isFavorite must be a boolean' });
+  }
+  if (!(await Food.exists({ _id: foodId }))) {
+    return res.status(404).json({ message: 'Food not found' });
+  }
+
+  let preferences = await UserPreference.findOne({ user: req.user._id });
+  if (!preferences) {
+    preferences = await UserPreference.create({ user: req.user._id });
+  }
+
+  if (isFavorite) {
+    preferences.favoriteFoods.addToSet(foodId);
+  } else {
+    preferences.favoriteFoods.pull(foodId);
+  }
+  await preferences.save();
+
+  res.json({
+    favoriteFoods: preferences.favoriteFoods.map(String),
+    isFavorite,
+  });
+});
+
 /**
  * Get trending foods
  */
 export const getTrendingFoods = catchAsync(async (req, res) => {
-  const trending = await Food.find({ isAvailable: true })
+  const trending = await Food.find({ available: true })
     .sort({ popularity: -1 })
     .limit(10);
 
